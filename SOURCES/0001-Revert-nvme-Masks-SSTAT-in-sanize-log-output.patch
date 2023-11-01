@@ -1,0 +1,35 @@
+From e1afeffcbb78e252bbb0d21d2f4ed0fffeb59105 Mon Sep 17 00:00:00 2001
+From: Maurizio Lombardi <mlombard@redhat.com>
+Date: Tue, 23 May 2023 15:08:40 +0200
+Subject: [PATCH] Revert "nvme: Masks SSTAT in sanize-log output"
+
+The NVME_SANITIZE_SSTAT_STATUS_MASK is used to mask the
+3 least significant bits (representing the status of the most recent
+sanitize operation) of the SSTAT field.
+
+The SSTAT field is 16 bits wide and contains other information too, such
+as the Global Data Erased bit and the number of completed passes.
+
+Revert this commit so nvme-cli will print the entire SSTAT field
+
+This reverts commit 7092ff55c5d9017231a68fa4dbb9a37b42d61d61.
+---
+ nvme-print.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/nvme-print.c b/nvme-print.c
+index c989435d..735ec193 100644
+--- a/nvme-print.c
++++ b/nvme-print.c
+@@ -4423,7 +4423,7 @@ void nvme_show_sanitize_log(struct nvme_sanitize_log_page *sanitize,
+ 		printf("\n");
+ 
+ 	printf("Sanitize Status                        (SSTAT) :  %#x\n",
+-		le16_to_cpu(sanitize->sstat) & NVME_SANITIZE_SSTAT_STATUS_MASK);
++		le16_to_cpu(sanitize->sstat));
+ 	if (human)
+ 		nvme_show_sanitize_log_sstat(le16_to_cpu(sanitize->sstat));
+ 
+-- 
+2.39.3
+
