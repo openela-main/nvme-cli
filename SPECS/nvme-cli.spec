@@ -3,7 +3,7 @@
 
 Name:           nvme-cli
 Version:        1.16
-Release:        7%{?dist}
+Release:        9%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPLv2+
@@ -27,6 +27,8 @@ Patch13:        0013-nvme-cli-Add-support-set-feature-event-in-PEL.patch
 Patch14:        0014-nvme-cli-Add-support-Telemetry-CRT-in-PEL.patch
 Patch15:        0015-fix-firmware-log-page-frs-variable-sign.patch
 Patch16:        0016-fix-file-permissions-nvme-print.c.patch
+Patch17:        0017-fabrics-Fix-ordering-for-auto-connect-services.patch
+Patch18:        0018-nvme-fix-rnlpt-to_string-values.patch
 
 BuildRequires:  libuuid-devel
 BuildRequires:  gcc
@@ -56,6 +58,8 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
+%patch18 -p1
 
 %build
 
@@ -114,6 +118,12 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
+* Thu Apr 20 2023 Maurizio Lombardi <mlombard@redhat.com> - 1.16-9
+- Fix BZ #2187288
+
+* Wed Apr 05 2023 Maurizio Lombardi <mlombard@redhat.com> - 1.16-8
+- Fix BZ #1954185
+
 * Wed Nov 09 2022 Maurizio Lombardi <mlombard@redhat.com> - 1.16-7
 - Do not re-enable the nvmefc-boot-connections service if
   we are just upgrading the package.
