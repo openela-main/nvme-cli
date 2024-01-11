@@ -2,23 +2,27 @@
 #%%global shortcommit0 %%(c=%%{commit0}; echo ${c:0:7})
 
 Name:           nvme-cli
-Version:        2.2.1
-Release:        4%{?dist}
+Version:        2.4
+Release:        10%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPLv2+
 URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
-Patch0:         0001-Revert-nvme-Masks-SSTAT-in-sanize-log-output.patch
-Patch1:         0002-fabrics-Fix-ordering-for-auto-connect-services.patch
 
-BuildRequires:  meson >= 0.48.0
+Patch0:         0001-nbft-make-lookup_ctrl-function-public.patch
+Patch1:         0002-nbft-added-NBFT-v1.0-table-support.patch
+Patch2:         0003-nbft-add-the-nbft-show-plugin.patch
+Patch3:         0004-Revert-nvme-Masks-SSTAT-in-sanize-log-output.patch
+Patch4:         0005-util-Fix-suffix_si_parse-to-parse-no-decimal-point-b.patch
+
+BuildRequires:  meson >= 0.50.0
 BuildRequires:  gcc gcc-c++
 BuildRequires:  libuuid-devel
 BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
-BuildRequires:  libnvme-devel >= 1.2
+BuildRequires:  libnvme-devel >= 1.4-5
 BuildRequires:  json-c-devel >= 0.14
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -34,6 +38,9 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
 
 %build
 %meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
@@ -42,12 +49,8 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 %install
 %meson_install
 
-# hostid and hostnqn are supposed to be unique per machine.  We obviously
-# can't package them.
-#rm -f %{buildroot}%{_sysconfdir}/nvme/hostid
-#rm -f %{buildroot}%{_sysconfdir}/nvme/hostnqn
-
 # Do not install the dracut rule yet.  See rhbz 1742764
+# Do we want to keep this here?  Now that we have boot support for nvme/fc + tcp?
 rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 
 # Move html docs into the right place
@@ -57,13 +60,13 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %files
 %license LICENSE
 %doc README.md
-%doc %{_pkgdocdir}
+%doc %{_pkgdocdir}/*
 %{_sbindir}/nvme
 %{_mandir}/man1/nvme*.gz
 %{_datadir}/bash-completion/completions/nvme
 %{_datadir}/zsh/site-functions/_nvme
 %dir %{_sysconfdir}/nvme
-%{_sysconfdir}/nvme/discovery.conf
+%config(noreplace) %{_sysconfdir}/nvme/discovery.conf
 %{_unitdir}/nvmefc-boot-connections.service
 %{_unitdir}/nvmf-autoconnect.service
 %{_unitdir}/nvmf-connect.target
@@ -71,32 +74,57 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %{_udevrulesdir}/70-nvmf-autoconnect.rules
 %{_udevrulesdir}/71-nvmf-iopolicy-netapp.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
+# Is this still true?  Now that we support nvme-of boot, do we want to install this file?
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 
 %post
 if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
         if [ ! -s %{_sysconfdir}/nvme/hostnqn ]; then
-		echo $(nvme gen-hostnqn) > %{_sysconfdir}/nvme/hostnqn
+            echo $(nvme gen-hostnqn) > %{_sysconfdir}/nvme/hostnqn
         fi
         if [ ! -s %{_sysconfdir}/nvme/hostid ]; then
-                uuidgen > %{_sysconfdir}/nvme/hostid
+            echo $(nvme show-hostnqn | sed 's/^.*uuid://') > %{_sysconfdir}/nvme/hostid
         fi
 
-	# apply udev and systemd changes that we did
-	if [ $1 -eq 1 ]; then
-		systemctl enable nvmefc-boot-connections
-	fi
-	systemctl daemon-reload
-	udevadm control --reload-rules && udevadm trigger
-	exit 0
+    # apply udev and systemd changes that we did
+    if [ $1 -eq 1 ]; then
+        systemctl enable nvmefc-boot-connections
+    fi
+    systemctl daemon-reload
+    udevadm control --reload-rules && udevadm trigger
+    exit 0
 fi
 
 %changelog
-* Fri Jun 23 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.1.2-4
-- Fix BZ2215006 (systemd services ordering for nvmf-autoconnect)
+* Mon Aug 21 2023 John Meneghini <jmeneghi@redhat.com> - 2.4-10
+- JIRA: https://issues.redhat.com/browse/RHEL-1492
 
-* Tue Jun 20 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.1.2-3
-- Fix BZ2214603 (NVME_SANITIZE_SSTAT_STATUS_MASK)
+* Thu Aug 10 2023 John Meneghini <jmeneghi@redhat.com> - 2.4-9
+- JIRA: https://issues.redhat.com/browse/RHEL-1147
+
+* Mon Jul 17 2023 John Meneghini <jmeneghi@redhat.com> - 2.4-8
+- Fix BZ#2223436
+
+* Wed Jun 14 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.4-7
+- Fix BZ#2210656
+
+* Tue May 30 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.4-6
+- Rebuild for #2208399
+
+* Thu May 25 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.4-5
+- Fix SSTAT print (BZ2208399)
+
+* Tue May 16 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.4-4
+- Add support to NBFT (BZ2188518)
+
+* Fri May 12 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.4-3
+- Fix a warning when building the package BZ2195897
+
+* Wed May 03 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.4-2
+- Fix a bogus changelog date BZ2186074
+
+* Mon Apr 03 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.4-1
+- Update to version v2.4
 
 * Thu Nov 10 2022 Maurizio Lombardi <mlombard@redhat.com> - 2.1.2-2
 - Do not re-enable nvmefc-boot-connections when the package gets updated
