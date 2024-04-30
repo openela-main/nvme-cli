@@ -1,0 +1,50 @@
+From 748a9ac050fb443b1204d06ce3b5b129b6a8afe2 Mon Sep 17 00:00:00 2001
+From: Martin George <marting@netapp.com>
+Date: Thu, 5 Oct 2023 12:12:46 +0530
+Subject: [PATCH] udev-rules: rename netapp udev rule
+
+Rename 71-nvmf-iopolicy-netapp.rules.in to 71-nvmf-netapp.rules.in
+so as to make the name generic, since this not only sets the
+iopolicy here but also modifies the ctrl_loss_tmo.
+
+Signed-off-by: Martin George <marting@netapp.com>
+---
+ meson.build                                                     | 2 +-
+ nvme.spec.in                                                    | 2 +-
+ ...71-nvmf-iopolicy-netapp.rules.in => 71-nvmf-netapp.rules.in} | 0
+ 3 files changed, 2 insertions(+), 2 deletions(-)
+ rename nvmf-autoconnect/udev-rules/{71-nvmf-iopolicy-netapp.rules.in => 71-nvmf-netapp.rules.in} (100%)
+
+diff --git a/meson.build b/meson.build
+index 3d3fb08541ff..310ba1f83400 100644
+--- a/meson.build
++++ b/meson.build
+@@ -236,7 +236,7 @@ endforeach
+ 
+ udev_files = [
+   '70-nvmf-autoconnect.rules',
+-  '71-nvmf-iopolicy-netapp.rules',
++  '71-nvmf-netapp.rules',
+ ]
+ 
+ foreach file : udev_files
+diff --git a/nvme.spec.in b/nvme.spec.in
+index fe4675a7bb0b..3eab9ff030ff 100644
+--- a/nvme.spec.in
++++ b/nvme.spec.in
+@@ -31,7 +31,7 @@ touch %{buildroot}@SYSCONFDIR@/nvme/hostid
+ @SYSCONFDIR@/nvme/discovery.conf
+ %ghost @SYSCONFDIR@/nvme/config.json
+ @UDEVRULESDIR@/70-nvmf-autoconnect.rules
+-@UDEVRULESDIR@/71-nvmf-iopolicy-netapp.rules
++@UDEVRULESDIR@/71-nvmf-netapp.rules
+ @DRACUTRILESDIR@/70-nvmf-autoconnect.conf
+ @SYSTEMDDIR@/nvmf-connect@.service
+ @SYSTEMDDIR@/nvmefc-boot-connections.service
+diff --git a/nvmf-autoconnect/udev-rules/71-nvmf-iopolicy-netapp.rules.in b/nvmf-autoconnect/udev-rules/71-nvmf-netapp.rules.in
+similarity index 100%
+rename from nvmf-autoconnect/udev-rules/71-nvmf-iopolicy-netapp.rules.in
+rename to nvmf-autoconnect/udev-rules/71-nvmf-netapp.rules.in
+-- 
+2.39.3
+

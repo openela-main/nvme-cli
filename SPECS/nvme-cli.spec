@@ -2,19 +2,18 @@
 #%%global shortcommit0 %%(c=%%{commit0}; echo ${c:0:7})
 
 Name:           nvme-cli
-Version:        2.4
-Release:        10%{?dist}
+Version:        2.6
+Release:        5%{?dist}
 Summary:        NVMe management command line interface
 
-License:        GPLv2+
+License:        GPL-2.0-only
 URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
-Patch0:         0001-nbft-make-lookup_ctrl-function-public.patch
-Patch1:         0002-nbft-added-NBFT-v1.0-table-support.patch
-Patch2:         0003-nbft-add-the-nbft-show-plugin.patch
-Patch3:         0004-Revert-nvme-Masks-SSTAT-in-sanize-log-output.patch
-Patch4:         0005-util-Fix-suffix_si_parse-to-parse-no-decimal-point-b.patch
+Patch0:         0001-udev-rules-set-ctrl_loss_tmo-to-1-for-ONTAP-NVMe-TCP.patch
+Patch1:         0002-udev-rules-rename-netapp-udev-rule.patch
+Patch2:         0003-Revert-fabrics-Use-corresponding-hostid-when-hostnqn.patch
+Patch3:         0004-nvme-Fixed-segmentation-fault-when-getting-host-init.patch
 
 BuildRequires:  meson >= 0.50.0
 BuildRequires:  gcc gcc-c++
@@ -22,7 +21,7 @@ BuildRequires:  libuuid-devel
 BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
-BuildRequires:  libnvme-devel >= 1.4-5
+BuildRequires:  libnvme-devel >= 1.6-1
 BuildRequires:  json-c-devel >= 0.14
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -40,7 +39,6 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
 
 %build
 %meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
@@ -72,7 +70,7 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %{_unitdir}/nvmf-connect.target
 %{_unitdir}/nvmf-connect@.service
 %{_udevrulesdir}/70-nvmf-autoconnect.rules
-%{_udevrulesdir}/71-nvmf-iopolicy-netapp.rules
+%{_udevrulesdir}/71-nvmf-netapp.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
 # Is this still true?  Now that we support nvme-of boot, do we want to install this file?
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
@@ -96,6 +94,21 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
+* Thu Feb 22 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.6-5
+- Fix for RHEL-13107
+
+* Mon Nov 13 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.6-4
+- Fix for RHEL-16216 (revert 1:1 mapping between hostnqn and hostid)
+
+* Wed Nov 08 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.6-3
+- Fixes for RHEL-12566
+
+* Mon Nov 06 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.6-2
+- Rebuild for side-tag
+
+* Tue Oct 31 2023 Maurizio Lombardi <mlombard@redhat.com> - 2.6-1
+- Update to version 2.6
+
 * Mon Aug 21 2023 John Meneghini <jmeneghi@redhat.com> - 2.4-10
 - JIRA: https://issues.redhat.com/browse/RHEL-1492
 

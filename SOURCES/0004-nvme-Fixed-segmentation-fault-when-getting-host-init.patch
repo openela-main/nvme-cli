@@ -1,0 +1,29 @@
+From 2f30d87d5c258fd97f78b0705bb92519d8a2498d Mon Sep 17 00:00:00 2001
+From: "da Cunha, Leonardo" <leonardo.da.cunha@solidigm.com>
+Date: Wed, 11 Oct 2023 09:01:44 -0700
+Subject: [PATCH] nvme: Fixed segmentation fault when getting host initiated
+ telemetry
+
+Signed-off-by: leonardo.da.cunha <leonardo.da.cunha@solidigm.com>
+---
+ nvme.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/nvme.c b/nvme.c
+index b9e56a48f0a5..73d74afdfd73 100644
+--- a/nvme.c
++++ b/nvme.c
+@@ -851,6 +851,10 @@ static int __get_telemetry_log_host(struct nvme_dev *dev,
+ 	_cleanup_free_ struct nvme_telemetry_log *log = NULL;
+ 	int err;
+ 
++	log = nvme_alloc(sizeof(*log));
++	if (!log)
++		return -errno;
++
+ 	err = nvme_cli_get_log_telemetry_host(dev, 0,
+ 					      NVME_LOG_TELEM_BLOCK_SIZE,
+ 					      log);
+-- 
+2.39.3
+
