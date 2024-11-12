@@ -1,0 +1,76 @@
+From 42f788edccb954fe8b54c43809523e603c99f63c Mon Sep 17 00:00:00 2001
+From: Maurizio Lombardi <mlombard@redhat.com>
+Date: Wed, 22 May 2024 15:06:18 +0200
+Subject: [PATCH] nvme: telemetry: report the correct error if the ioctl()
+ fails.
+
+It's wrong to assume that if the ioctl() returns a non-zero number
+then the errno variable is set.
+The ioctl() might return an NVMe Status error to inform the caller
+that the requested log page is not supported, in that case errno is left
+untouched.
+
+The original code didn't handle this case and returned "-errno" even when
+the latter was zero. The caller interpreted this as a successful operation
+and this might lead to improperly dereferencing the log page pointer.
+
+$ nvme telemetry-log /dev/nvme0 --output-file=telemetry_log.bin
+ERROR: get_telemetry_log: : write failed with error : Bad address
+
+Fix this bug by returning the NVMe status if errno is zero:
+
+$ nvme telemetry-log /dev/nvme0 --output-file=telemetry_log.bin
+NVMe status: Invalid Log Page: The log page indicated is invalid(0x109)
+Failed to acquire telemetry log 265!
+
+Signed-off-by: Maurizio Lombardi <mlombard@redhat.com>
+---
+ nvme.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/nvme.c b/nvme.c
+index d722b91e5ed8..226413bc0eda 100644
+--- a/nvme.c
++++ b/nvme.c
+@@ -717,7 +717,10 @@ static int get_log_telemetry_ctrl(struct nvme_dev *dev, bool rae, size_t size,
+ 	err = nvme_cli_get_log_telemetry_ctrl(dev, rae, 0, size, log);
+ 	if (err) {
+ 		free(log);
+-		return -errno;
++		if (errno)
++			return -errno;
++		else
++			return err;
+ 	}
+ 
+ 	*buf = log;
+@@ -737,7 +740,10 @@ static int get_log_telemetry_host(struct nvme_dev *dev, size_t size,
+ 	err = nvme_cli_get_log_telemetry_host(dev, 0, size, log);
+ 	if (err) {
+ 		free(log);
+-		return -errno;
++		if (errno)
++			return -errno;
++		else
++			return err;
+ 	}
+ 
+ 	*buf = log;
+@@ -757,8 +763,12 @@ static int __create_telemetry_log_host(struct nvme_dev *dev,
+ 		return -ENOMEM;
+ 
+ 	err = nvme_cli_get_log_create_telemetry_host(dev, log);
+-	if (err)
+-		return -errno;
++	if (err) {
++		if (errno)
++			return -errno;
++		else
++			return err;
++	}
+ 
+ 	err = parse_telemetry_da(dev, da, log, size);
+ 	if (err)
+-- 
+2.43.0
+

@@ -1,0 +1,20 @@
+diff --git a/fabrics.c b/fabrics.c
+index 871c20ede093..90c3e5d6c602 100644
+--- a/fabrics.c
++++ b/fabrics.c
+@@ -643,6 +643,7 @@ char *nvmf_hostid_from_hostnqn(const char *hostnqn)
+ 
+ void nvmf_check_hostid_and_hostnqn(const char *hostid, const char *hostnqn, unsigned int verbose)
+ {
++#if 0
+ 	_cleanup_free_ char *hostid_from_file = NULL;
+ 	_cleanup_free_ char *hostid_from_hostnqn = NULL;
+ 
+@@ -665,6 +666,7 @@ void nvmf_check_hostid_and_hostnqn(const char *hostid, const char *hostnqn, unsi
+ 			fprintf(stderr,
+ 				"warning: use hostid which does not match uuid in hostnqn\n");
+ 	}
++#endif
+ }
+ 
+ int nvmf_discover(const char *desc, int argc, char **argv, bool connect)

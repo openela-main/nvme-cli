@@ -1,0 +1,63 @@
+From fac45ce03315479b0d30e71316e669d9d4ffb31c Mon Sep 17 00:00:00 2001
+From: Greg Joyce <gjoyce@linux.ibm.com>
+Date: Fri, 10 May 2024 14:23:11 -0500
+Subject: [PATCH] sed: only re-read partition table after unlock.
+
+The partition table was being re-read after both lock and
+unlock operations. The re-read would fail with an error
+message after a lock since the partition was no longer readable.
+
+Signed-off-by: Greg Joyce <gjoyce@linux.ibm.com>
+---
+ plugins/sed/sedopal_cmd.c | 27 ++++++++++++++-------------
+ 1 file changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/plugins/sed/sedopal_cmd.c b/plugins/sed/sedopal_cmd.c
+index 21ebd360c219..221f62b15186 100644
+--- a/plugins/sed/sedopal_cmd.c
++++ b/plugins/sed/sedopal_cmd.c
+@@ -251,8 +251,21 @@ int sedopal_cmd_lock(int fd)
+  */
+ int sedopal_cmd_unlock(int fd)
+ {
++	int rc;
++
++	rc = sedopal_lock_unlock(fd, OPAL_RW);
++
++	/*
++	 * If the unlock was successful, force a re-read of the
++	 * partition table. Return rc of unlock operation.
++	 */
++	if (rc == 0) {
++		if (ioctl(fd, BLKRRPART, 0) != 0)
++			fprintf(stderr,
++				"Warning: failed re-reading partition\n");
++	}
+ 
+-	return sedopal_lock_unlock(fd, OPAL_RW);
++	return rc;
+ }
+ 
+ /*
+@@ -275,18 +288,6 @@ int sedopal_lock_unlock(int fd, int lock_state)
+ 	if (rc != 0)
+ 		fprintf(stderr,
+ 			"Error: failed locking or unlocking - %d\n", rc);
+-
+-	/*
+-	 * If the unlock was successful, force a re-read of the
+-	 * partition table.
+-	 */
+-	if (rc == 0) {
+-		rc = ioctl(fd, BLKRRPART, 0);
+-		if (rc != 0)
+-			fprintf(stderr,
+-				"Error: failed re-reading partition\n");
+-	}
+-
+ 	return rc;
+ }
+ 
+-- 
+2.43.0
+

@@ -1,19 +1,24 @@
 #%%global commit0 bdbb4da0979fbdc079cf98410cdb31cf799e83b3
 #%%global shortcommit0 %%(c=%%{commit0}; echo ${c:0:7})
 
+%global nmlibdir %{_prefix}/lib/NetworkManager
+
 Name:           nvme-cli
-Version:        2.6
-Release:        5%{?dist}
+Version:        2.9.1
+Release:        6%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
 URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
+Source1:        99-nvme-nbft-connect.sh
+Source2:        99-nvme-nbft-no-ignore-carrier.conf
 
-Patch0:         0001-udev-rules-set-ctrl_loss_tmo-to-1-for-ONTAP-NVMe-TCP.patch
-Patch1:         0002-udev-rules-rename-netapp-udev-rule.patch
-Patch2:         0003-Revert-fabrics-Use-corresponding-hostid-when-hostnqn.patch
-Patch3:         0004-nvme-Fixed-segmentation-fault-when-getting-host-init.patch
+Patch0:         0001-Revert-fabrics-Use-corresponding-hostid-when-hostnqn.patch
+Patch1:         0002-nvme-telemetry-report-the-correct-error-if-the-ioctl.patch
+# https://issues.redhat.com/browse/RHEL-37601
+Patch2:         nvme-cli-2.10-nbft-discovery.patch
+Patch3:         0003-sed-only-re-read-partition-table-after-unlock.patch
 
 BuildRequires:  meson >= 0.50.0
 BuildRequires:  gcc gcc-c++
@@ -21,7 +26,7 @@ BuildRequires:  libuuid-devel
 BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
-BuildRequires:  libnvme-devel >= 1.6-1
+BuildRequires:  libnvme-devel >= 1.9-2
 BuildRequires:  json-c-devel >= 0.14
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -32,13 +37,7 @@ Requires:       util-linux
 nvme-cli provides NVM-Express user space tooling for Linux.
 
 %prep
-#%%setup -qn %%{name}-%%{commit0}
-%setup -q
-
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
+%autosetup -p1 -n %{name}-%{version}
 
 %build
 %meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
@@ -46,6 +45,10 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 
 %install
 %meson_install
+mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/dispatcher.d
+mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
+%{__install} -pm 755 %{SOURCE1} $RPM_BUILD_ROOT%{nmlibdir}/dispatcher.d/
+%{__install} -pm 644 %{SOURCE2} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 
 # Do not install the dracut rule yet.  See rhbz 1742764
 # Do we want to keep this here?  Now that we have boot support for nvme/fc + tcp?
@@ -67,13 +70,17 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %config(noreplace) %{_sysconfdir}/nvme/discovery.conf
 %{_unitdir}/nvmefc-boot-connections.service
 %{_unitdir}/nvmf-autoconnect.service
+%{_unitdir}/nvmf-connect-nbft.service
 %{_unitdir}/nvmf-connect.target
 %{_unitdir}/nvmf-connect@.service
+%{_udevrulesdir}/65-persistent-net-nbft.rules
 %{_udevrulesdir}/70-nvmf-autoconnect.rules
 %{_udevrulesdir}/71-nvmf-netapp.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
 # Is this still true?  Now that we support nvme-of boot, do we want to install this file?
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
+%{nmlibdir}/dispatcher.d/99-nvme-nbft-connect.sh
+%{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
 
 %post
 if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
@@ -94,6 +101,28 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
+* Thu Aug 22 2024 Tomas Bzatek <tbzatek@redhat.com> - 2.9.1-6
+- Install NetworkManager override for nbft interfaces
+- Rename reconnect NetworkManager hook to 99-nvme-nbft-connect.sh
+
+* Tue Aug 06 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.9.1-5
+- Fix RHEL-38372
+
+* Wed Jul 24 2024 Tomas Bzatek <tbzatek@redhat.com> - 2.9.1-4
+- Backport NBFT discovery support (RHEL-37601)
+
+* Wed June 19 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.9.1-3
+- Fix RHEL-36139
+
+* Tue May 07 2024 Tomas Bzatek <tbzatek@redhat.com> - 2.9.1-2
+- Install custom nvmf-connect-nbft.sh NetworkManager hook (RHEL-18912)
+
+* Tue May 07 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.9.1-1
+- Update to version 2.9.1
+
+* Wed Apr 03 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.8-1
+- Update to version 2.8
+
 * Thu Feb 22 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.6-5
 - Fix for RHEL-13107
 
