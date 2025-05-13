@@ -1,0 +1,42 @@
+From b5208a987bf85ae3f4e264e6df55a7fb9acd9907 Mon Sep 17 00:00:00 2001
+From: Martin George <marting@netapp.com>
+Date: Fri, 29 Nov 2024 11:10:16 +0530
+Subject: [PATCH] netapp-ontapdev: fix JSON output for nsze & nuse
+
+The namespace size & utilization values printed in the JSON
+output was incorrect. Fix the same.
+
+Signed-off-by: Martin George <marting@netapp.com>
+---
+ plugins/netapp/netapp-nvme.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/plugins/netapp/netapp-nvme.c b/plugins/netapp/netapp-nvme.c
+index 76e8ddf1..6ff428d9 100644
+--- a/plugins/netapp/netapp-nvme.c
++++ b/plugins/netapp/netapp-nvme.c
+@@ -276,6 +276,8 @@ static void netapp_ontapdevice_json(struct json_object *devices, char *devname,
+ 		unsigned long long nsze, unsigned long long nuse)
+ {
+ 	struct json_object *device_attrs;
++	unsigned long long ns_size = nsze * lba;
++	unsigned long long used_size = nuse * lba;
+ 
+ 	device_attrs = json_create_object();
+ 	json_object_add_value_string(device_attrs, "Device", devname);
+@@ -283,9 +285,9 @@ static void netapp_ontapdevice_json(struct json_object *devices, char *devname,
+ 	json_object_add_value_string(device_attrs, "Namespace_Path", nspath);
+ 	json_object_add_value_int(device_attrs, "NSID", nsid);
+ 	json_object_add_value_string(device_attrs, "UUID", uuid);
+-	json_object_add_value_uint64(device_attrs, "LBA_Data_Size", lba);
+-	json_object_add_value_uint64(device_attrs, "Namespace_Size", nsze);
+-	json_object_add_value_uint64(device_attrs, "UsedBytes", nuse);
++	json_object_add_value_uint64(device_attrs, "LBA_Size", lba);
++	json_object_add_value_uint64(device_attrs, "Namespace_Size", ns_size);
++	json_object_add_value_uint64(device_attrs, "UsedBytes", used_size);
+ 	json_object_add_value_string(device_attrs, "Version", version);
+ 
+ 	json_array_add_value_object(devices, device_attrs);
+-- 
+2.43.5
+

@@ -1,0 +1,56 @@
+From 7057e6c50639fb05d0997eaa6fac48ece3cb38bc Mon Sep 17 00:00:00 2001
+From: Bryan Gurney <bgurney@redhat.com>
+Date: Tue, 21 Jan 2025 12:20:34 -0500
+Subject: [PATCH] nvme: set eds to true if controller supports 128 bit hostid
+
+A controller that uses a 128-bit Host Identifier may result in the
+"nvme resv-report" command failing with a "Host Identifier Inconsistent
+Format" error that suggests the "simultaneous use of 64-bit and
+128-bit Host Identifier values on different controllers".
+
+This error can be avoided if the "--eds" option is used, to request
+the extended data structure.  However, the controller's ctratt
+value indicates whether the Host Identifier is 64 bits or 128 bits.
+Therefore, check the ctratt flag, and set eds to true if the
+controller indicates a 128-bit Host Identifier.
+
+Signed-off-by: Bryan Gurney <bgurney@redhat.com>
+---
+ nvme.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/nvme.c b/nvme.c
+index a65873b2..2ed4ee92 100644
+--- a/nvme.c
++++ b/nvme.c
+@@ -7740,6 +7740,7 @@ static int resv_report(int argc, char **argv, struct command *cmd, struct plugin
+ 	const char *eds = "request extended data structure";
+ 
+ 	_cleanup_free_ struct nvme_resv_status *status = NULL;
++	_cleanup_free_ struct nvme_id_ctrl *ctrl = NULL;
+ 	_cleanup_nvme_dev_ struct nvme_dev *dev = NULL;
+ 	nvme_print_flags_t flags;
+ 	int err, size;
+@@ -7792,6 +7793,19 @@ static int resv_report(int argc, char **argv, struct command *cmd, struct plugin
+ 
+ 	size = (cfg.numd + 1) << 2;
+ 
++	ctrl = nvme_alloc(sizeof(*ctrl));
++	if (!ctrl)
++		return -ENOMEM;
++
++	err = nvme_cli_identify_ctrl(dev, ctrl);
++	if (err) {
++		nvme_show_error("identify-ctrl: %s", nvme_strerror(errno));
++		return -errno;
++	}
++
++	if (ctrl->ctratt & NVME_CTRL_CTRATT_128_ID)
++		cfg.eds = true;
++
+ 	status = nvme_alloc(size);
+ 	if (!status)
+ 		return -ENOMEM;
+-- 
+2.43.5
+

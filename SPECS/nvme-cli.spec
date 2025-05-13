@@ -4,8 +4,8 @@
 %global nmlibdir %{_prefix}/lib/NetworkManager
 
 Name:           nvme-cli
-Version:        2.9.1
-Release:        6%{?dist}
+Version:        2.11
+Release:        5%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
@@ -13,12 +13,15 @@ URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 Source1:        99-nvme-nbft-connect.sh
 Source2:        99-nvme-nbft-no-ignore-carrier.conf
-
-Patch0:         0001-Revert-fabrics-Use-corresponding-hostid-when-hostnqn.patch
-Patch1:         0002-nvme-telemetry-report-the-correct-error-if-the-ioctl.patch
-# https://issues.redhat.com/browse/RHEL-37601
-Patch2:         nvme-cli-2.10-nbft-discovery.patch
-Patch3:         0003-sed-only-re-read-partition-table-after-unlock.patch
+Patch0:         0001-netapp-ontapdev-add-verbose-output.patch
+Patch1:         0002-netapp-ontapdev-doc-add-verbose-details.patch
+Patch2:         0003-netapp-ontapdev-fix-fw-version-handling.patch
+Patch3:         0004-netapp-ontapdev-fix-JSON-output-for-nsze-nuse.patch
+Patch4:         0005-nvme-netapp-update-err-messages.patch
+Patch5:         0006-netapp-smdev-remove-redundant-code.patch
+Patch6:         0007-netapp-smdev-add-verbose-output.patch
+Patch7:         0008-netapp-smdev-doc-add-verbose-details.patch
+Patch8:         0009-nvme-set-eds-to-true-if-controller-supports-128-bit-.patch
 
 BuildRequires:  meson >= 0.50.0
 BuildRequires:  gcc gcc-c++
@@ -26,10 +29,11 @@ BuildRequires:  libuuid-devel
 BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
-BuildRequires:  libnvme-devel >= 1.9-2
+BuildRequires:  libnvme-devel >= 1.11-1
 BuildRequires:  json-c-devel >= 0.14
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
+BuildRequires:  kernel-headers >= 5.14.0-542
 
 Requires:       util-linux
 
@@ -75,6 +79,7 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %{_unitdir}/nvmf-connect@.service
 %{_udevrulesdir}/65-persistent-net-nbft.rules
 %{_udevrulesdir}/70-nvmf-autoconnect.rules
+%{_udevrulesdir}/70-nvmf-keys.rules
 %{_udevrulesdir}/71-nvmf-netapp.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
 # Is this still true?  Now that we support nvme-of boot, do we want to install this file?
@@ -101,6 +106,24 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
+* Thu Feb 13 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-5
+- Fix for RHEL-10433
+
+* Fri Jan 24 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-4
+- Add kernel-headers to BuildRequires (RHEL-70856)
+
+* Thu Jan 16 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-3
+- NetApp fixes for RHEL-71521
+
+* Fri Nov 15 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.11-2
+- Rebuild for RHEL-67144
+
+* Tue Nov 12 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.11-1
+- Update to version v2.11 RHEL-67144
+
+* Mon Oct 07 2024 Maurizio Lombardi <mlombard@redhat.com> - 2.10.2-1
+- Update to version 2.10.2 RHEL-60536
+
 * Thu Aug 22 2024 Tomas Bzatek <tbzatek@redhat.com> - 2.9.1-6
 - Install NetworkManager override for nbft interfaces
 - Rename reconnect NetworkManager hook to 99-nvme-nbft-connect.sh
