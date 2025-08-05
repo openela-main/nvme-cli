@@ -5,7 +5,7 @@
 
 Name:           nvme-cli
 Version:        2.11
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
@@ -22,6 +22,7 @@ Patch5:         0006-netapp-smdev-remove-redundant-code.patch
 Patch6:         0007-netapp-smdev-add-verbose-output.patch
 Patch7:         0008-netapp-smdev-doc-add-verbose-details.patch
 Patch8:         0009-nvme-set-eds-to-true-if-controller-supports-128-bit-.patch
+Patch9:         0010-udev-rules-ontap-switch-to-queue-depth-iopolicy.patch
 
 BuildRequires:  meson >= 0.50.0
 BuildRequires:  gcc gcc-c++
@@ -106,6 +107,9 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
+* Wed Jun 04 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-6
+- Fix for RHEL-95009
+
 * Thu Feb 13 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-5
 - Fix for RHEL-10433
 
