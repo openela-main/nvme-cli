@@ -4,8 +4,8 @@
 %global nmlibdir %{_prefix}/lib/NetworkManager
 
 Name:           nvme-cli
-Version:        2.11
-Release:        7%{?dist}
+Version:        2.13
+Release:        1%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
@@ -13,25 +13,14 @@ URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 Source1:        99-nvme-nbft-connect.sh
 Source2:        99-nvme-nbft-no-ignore-carrier.conf
-Patch0:         0001-netapp-ontapdev-add-verbose-output.patch
-Patch1:         0002-netapp-ontapdev-doc-add-verbose-details.patch
-Patch2:         0003-netapp-ontapdev-fix-fw-version-handling.patch
-Patch3:         0004-netapp-ontapdev-fix-JSON-output-for-nsze-nuse.patch
-Patch4:         0005-nvme-netapp-update-err-messages.patch
-Patch5:         0006-netapp-smdev-remove-redundant-code.patch
-Patch6:         0007-netapp-smdev-add-verbose-output.patch
-Patch7:         0008-netapp-smdev-doc-add-verbose-details.patch
-Patch8:         0009-nvme-set-eds-to-true-if-controller-supports-128-bit-.patch
-Patch9:         0010-udev-rules-ontap-switch-to-queue-depth-iopolicy.patch
-Patch10:        0011-Revert-nvme-print-json-display-only-verbose-output.patch
 
-BuildRequires:  meson >= 0.50.0
+BuildRequires:  meson >= 0.53
 BuildRequires:  gcc gcc-c++
 BuildRequires:  libuuid-devel
 BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
-BuildRequires:  libnvme-devel >= 1.11-1
+BuildRequires:  libnvme-devel >= 1.13-1
 BuildRequires:  json-c-devel >= 0.14
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -108,11 +97,8 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
-* Tue Oct 14 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-7
-- Fix for RHEL-121216
-
-* Wed Jun 04 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-6
-- Fix for RHEL-95009
+* Wed Apr 30 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.13-1
+- Update to version 2.13
 
 * Thu Feb 13 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-5
 - Fix for RHEL-10433
