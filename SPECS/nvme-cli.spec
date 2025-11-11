@@ -4,8 +4,8 @@
 %global nmlibdir %{_prefix}/lib/NetworkManager
 
 Name:           nvme-cli
-Version:        2.11
-Release:        6%{?dist}
+Version:        2.13
+Release:        2%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
@@ -13,9 +13,8 @@ URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
 Source1:        99-nvme-nbft-connect.sh
 Source2:        99-nvme-nbft-no-ignore-carrier.conf
-Patch0:         0001-udev-rules-ontap-switch-to-queue-depth-iopolicy.patch
 
-BuildRequires:  meson >= 0.50.0
+BuildRequires:  meson >= 0.53
 BuildRequires:  gcc gcc-c++
 BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
@@ -23,8 +22,8 @@ BuildRequires:  zlib-devel
 BuildRequires:  openssl-devel
 BuildRequires:  kernel-headers >= 6.12.0-37
 
-BuildRequires:  libnvme-devel >= 1.11-1
-BuildRequires:  json-c-devel >= 0.13
+BuildRequires:  libnvme-devel >= 1.13-1
+BuildRequires:  json-c-devel >= 0.14
 
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -40,7 +39,7 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 
 
 %build
-%meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Dpdc-enabled=true -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
+%meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Dpdc-enabled=false -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
 %meson_build
 
 
@@ -108,8 +107,11 @@ fi
 %systemd_postun nvmf-connect-nbft.service
 
 %changelog
-* Thu Jun 05 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-6
-- Fix for RHEL-95359
+* Mon Jun 23 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.13-2
+- Disable PDC at compile time (RHEL-97516)
+
+* Wed May 14 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.13-1
+- Update to version 2.13
 
 * Thu Jan 30 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.11-5
 - Partially restore the post install script (RHEL-78043)
