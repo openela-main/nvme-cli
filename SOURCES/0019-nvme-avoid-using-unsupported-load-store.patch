@@ -1,0 +1,58 @@
+diff --git a/nvme-print.c b/nvme-print.c
+index 2327674..cc27dc9 100644
+--- a/nvme-print.c
++++ b/nvme-print.c
+@@ -2452,23 +2452,45 @@ static void nvme_show_registers_pmrmscu(uint32_t pmrmscu)
+ 		pmrmscu);
+ }
+ 
+-static inline uint32_t mmio_read32(void *addr)
++/*
++ * VMs on arm64 can only use a subset of instructions for MMIO that provide
++ * the hypervisor with a complete instruction decode. Provide assembly MMIO
++ * accessors to prevent the compiler from using a possibly unsupported
++ * instruction.
++ *
++ * See kernel commit c726200dd106 ("KVM: arm/arm64: Allow reporting non-ISV
++ * data aborts to userspace") for more details.
++ */
++#if defined(__aarch64__)
++static inline uint32_t __raw_readl(const volatile uint32_t *addr)
++{
++	uint32_t val;
++
++	asm volatile("ldr %w0, %1" : "=r" (val) : "Qo" (*addr));
++
++	return val;
++}
++#else
++static inline uint32_t __raw_readl(volatile uint32_t *addr)
+ {
+-	__le32 *p = addr;
++	return *addr;
++}
++#endif
+ 
+-	return le32_to_cpu(*p);
++static inline uint32_t mmio_read32(void *addr)
++{
++	return le32_to_cpu(__raw_readl(addr));
+ }
+ 
+ /* Access 64-bit registers as 2 32-bit; Some devices fail 64-bit MMIO. */
+ static inline __u64 mmio_read64(void *addr)
+ {
+-	const volatile __u32 *p = addr;
+-	__u32 low, high;
++	uint32_t low, high;
+ 
+-	low = le32_to_cpu(*p);
+-	high = le32_to_cpu(*(p + 1));
++	low = le32_to_cpu(__raw_readl(addr));
++	high = le32_to_cpu(__raw_readl(addr + sizeof(uint32_t)));
+ 
+-	return ((__u64) high << 32) | low;
++	return ((uint64_t)high << 32) | low;
+ }
+ 
+ static void json_ctrl_registers(void *bar)

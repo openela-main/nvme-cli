@@ -3,7 +3,7 @@
 
 Name:           nvme-cli
 Version:        1.16
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPLv2+
@@ -29,6 +29,7 @@ Patch15:        0015-fix-firmware-log-page-frs-variable-sign.patch
 Patch16:        0016-fix-file-permissions-nvme-print.c.patch
 Patch17:        0017-fabrics-Fix-ordering-for-auto-connect-services.patch
 Patch18:        0018-nvme-fix-rnlpt-to_string-values.patch
+Patch19:        0019-nvme-avoid-using-unsupported-load-store.patch
 
 BuildRequires:  libuuid-devel
 BuildRequires:  gcc
@@ -60,6 +61,7 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 %patch16 -p1
 %patch17 -p1
 %patch18 -p1
+%patch19 -p1
 
 %build
 
@@ -118,6 +120,9 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
+* Wed Feb 25 2026 Maurizio Lombardi <mlombard@redhat.com> - 1.16-10
+- Fix VM crash RHEL-88173
+
 * Thu Apr 20 2023 Maurizio Lombardi <mlombard@redhat.com> - 1.16-9
 - Fix BZ #2187288
 
