@@ -4,7 +4,7 @@
 %global nmlibdir %{_prefix}/lib/NetworkManager
 
 Name:           nvme-cli
-Version:        2.13
+Version:        2.16
 Release:        2%{?dist}
 Summary:        NVMe management command line interface
 
@@ -22,7 +22,7 @@ BuildRequires:  zlib-devel
 BuildRequires:  openssl-devel
 BuildRequires:  kernel-headers >= 6.12.0-37
 
-BuildRequires:  libnvme-devel >= 1.13-1
+BuildRequires:  libnvme-devel >= 1.16-1
 BuildRequires:  json-c-devel >= 0.14
 
 BuildRequires:  asciidoc
@@ -77,6 +77,8 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %{_udevrulesdir}/70-nvmf-autoconnect.rules
 %{_udevrulesdir}/70-nvmf-keys.rules
 %{_udevrulesdir}/71-nvmf-netapp.rules
+%{_udevrulesdir}/71-nvmf-hpe.rules
+%{_udevrulesdir}/71-nvmf-vastdata.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{nmlibdir}/dispatcher.d/99-nvme-nbft-connect.sh
@@ -107,6 +109,15 @@ fi
 %systemd_postun nvmf-connect-nbft.service
 
 %changelog
+* Wed Nov 19 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.16-2
+- Fix gating tests for RHEL-129230
+
+* Tue Nov 18 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.16-1
+- Rebase to new version 2.16
+
+* Tue Oct 07 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.15-2
+- Rebase to latest version
+
 * Mon Jun 23 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.13-2
 - Disable PDC at compile time (RHEL-97516)
 
