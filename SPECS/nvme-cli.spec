@@ -4,7 +4,7 @@
 %global nmlibdir %{_prefix}/lib/NetworkManager
 
 Name:           nvme-cli
-Version:        2.13
+Version:        2.16
 Release:        1%{?dist}
 Summary:        NVMe management command line interface
 
@@ -20,7 +20,7 @@ BuildRequires:  libuuid-devel
 BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
-BuildRequires:  libnvme-devel >= 1.13-1
+BuildRequires:  libnvme-devel >= 1.16-1
 BuildRequires:  json-c-devel >= 0.14
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -35,7 +35,7 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 %autosetup -p1 -n %{name}-%{version}
 
 %build
-%meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
+%meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir} -Dpdc-enabled=false
 %meson_build
 
 %install
@@ -72,6 +72,8 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %{_udevrulesdir}/70-nvmf-autoconnect.rules
 %{_udevrulesdir}/70-nvmf-keys.rules
 %{_udevrulesdir}/71-nvmf-netapp.rules
+%{_udevrulesdir}/71-nvmf-hpe.rules
+%{_udevrulesdir}/71-nvmf-vastdata.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
 # Is this still true?  Now that we support nvme-of boot, do we want to install this file?
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
@@ -97,6 +99,9 @@ if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
 fi
 
 %changelog
+* Fri Nov 21 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.16-1
+- Update to version 2.16 (RHEL-129947)
+
 * Wed Apr 30 2025 Maurizio Lombardi <mlombard@redhat.com> - 2.13-1
 - Update to version 2.13
 
